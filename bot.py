@@ -7,7 +7,7 @@ from aiogram.filters import Command
 
 # ================== CONFIG ==================
 API_TOKEN = "ТВОЙ_BOT_TOKEN_СЮДА"   # ← вставь токен бота
-API_KEY = "HAS-0YOh37R8W2YSQDHPvgxM9Zju6"
+API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 if not API_TOKEN:
     print("Ошибка: BOT_TOKEN не задан!")
