@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 # ================== CONFIG ==================
-API_TOKEN = os.getenv("BOT_TOKEN")  # НЕ ТРОГАЕМ
+API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # ================== LOGGING ==================
@@ -40,7 +40,6 @@ async def fetch_bin(bin_number: str):
                 data = await resp.json()
             except:
                 return None
-
             return data
 
 # ================== BIN CHECK ==================
@@ -73,14 +72,14 @@ async def bin_lookup(bin_number: str) -> str:
 
     flag = country_flag(country_code)
 
-    # 🔥 ДИЗАЙН КАК НА СКРИНЕ
+    # 🔥 ДИЗАЙН
     response = (
-        f"✅ Bin: `{bin_number}`\n"
-        f"🌍 Country: {country_name} {flag}\n"
-        f"🏦 Bank: {bank}\n"
-        f"💳 Brand: {scheme}\n"
-        f"💰 Type: {type_}\n"
-        f"🏆 Level: {brand}"
+        f"`BIN`      ➜ `{bin_number}`\n"
+        f"`COUNTRY`  ➜ `{country_name}` {flag}\n"
+        f"`BANK`     ➜ `{bank}`\n"
+        f"`BRAND`    ➜ `{scheme}`\n"
+        f"`TYPE`     ➜ `{type_}`\n"
+        f"`LEVEL`    ➜ `{brand}`"
     )
 
     BIN_CACHE[bin_number] = response
@@ -111,11 +110,11 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # ✅ Sent by (как на скрине)
+    # 🔥 SENT BY (без лишнего отступа)
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
-    response += f"\n\n📤 Sent by: {username}"
+    response += f"\n`SENT BY` ➜ {username}"
 
     await message.answer(response, parse_mode="Markdown")
 
