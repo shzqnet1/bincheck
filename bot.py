@@ -1,17 +1,16 @@
 import asyncio
 import logging
-import os
 import aiohttp
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 # ================== CONFIG ==================
-API_TOKEN = os.getenv("BOT_TOKEN")
-API_KEY = os.getenv("PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4")  # ВСТАВЬ СЮДА КЛЮЧ
+API_TOKEN = "ТВОЙ_BOT_TOKEN_СЮДА"   # ← вставь токен бота
+API_KEY = "HAS-0YOh37R8W2YSQDHPvgxM9Zju6"
 
-if not API_TOKEN or not API_KEY:
-    print("Ошибка: BOT_TOKEN или HANDY_API_KEY не задан!")
+if not API_TOKEN:
+    print("Ошибка: BOT_TOKEN не задан!")
     exit(1)
 
 # ================== LOGGING ==================
@@ -49,11 +48,10 @@ async def bin_lookup(bin_number: str) -> str:
     bin_number = ''.join(c for c in bin_number if c.isdigit())
 
     if len(bin_number) < 6:
-        return "❌ Введи корректный BIN — минимум 6 цифр."
+        return "❌ Введи минимум 6 цифр."
 
-    bin_number = bin_number[:8]  # HandyAPI поддерживает 6-8 цифр
+    bin_number = bin_number[:8]
 
-    # Кэш
     if bin_number in BIN_CACHE:
         return BIN_CACHE[bin_number]
 
@@ -86,8 +84,8 @@ async def bin_lookup(bin_number: str) -> str:
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
-        "🔹 Используй /bin 457173 или !bin 457173"
+        "👋 BIN Checker Bot\n\n"
+        "Используй:\n/bin 457173\nили\n!bin 457173"
     )
 
 @dp.message()
