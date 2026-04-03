@@ -8,17 +8,14 @@ from aiogram.filters import Command
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_IDS = [5194696458]
+API_KEY = os.getenv("HAS-0YOh37R8W2YSQDHPvgxM9Zju6")  # ВСТАВЬ СЮДА КЛЮЧ
 
-if not API_TOKEN:
-    print("Ошибка: переменная окружения BOT_TOKEN не задана!")
+if not API_TOKEN or not API_KEY:
+    print("Ошибка: BOT_TOKEN или HANDY_API_KEY не задан!")
     exit(1)
 
 # ================== LOGGING ==================
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-)
+logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
@@ -26,45 +23,50 @@ dp = Dispatcher()
 # ================== CACHE ==================
 BIN_CACHE = {}
 
-# ================== COUNTRY FLAG ==================
+# ================== FLAG ==================
 def country_flag(country_code: str) -> str:
     if not country_code or len(country_code) != 2:
         return "🏳️"
     code = country_code.upper()
     return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
-# ================== BIN API ==================
-async def fetch_bin_info(bin_number: str):
-    url = f"https://binlist.io/lookup/{bin_number}"
+# ================== API ==================
+async def fetch_bin(bin_number: str):
+    url = f"https://data.handyapi.com/bin/{bin_number}"
+
+    headers = {
+        "x-api-key": API_KEY
+    }
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
+        async with session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 return None
             return await resp.json()
 
+# ================== BIN CHECK ==================
 async def bin_lookup(bin_number: str) -> str:
     bin_number = ''.join(c for c in bin_number if c.isdigit())
 
     if len(bin_number) < 6:
         return "❌ Введи корректный BIN — минимум 6 цифр."
 
-    bin_number = bin_number[:6]
+    bin_number = bin_number[:8]  # HandyAPI поддерживает 6-8 цифр
 
-    # Проверка кэша
+    # Кэш
     if bin_number in BIN_CACHE:
         return BIN_CACHE[bin_number]
 
-    data = await fetch_bin_info(bin_number)
+    data = await fetch_bin(bin_number)
 
-    if not data:
+    if not data or data.get("Status") != "SUCCESS":
         return "❌ BIN не найден."
 
-    bank = data.get("bank", {}).get("name", "N/A")
-    country = data.get("country", {}).get("code", "")
-    scheme = data.get("scheme", "N/A")
-    brand = data.get("brand", "N/A")
-    type_ = data.get("type", "N/A")
+    bank = data.get("Issuer", "N/A")
+    type_ = data.get("Type", "N/A")
+    scheme = data.get("Scheme", "N/A")
+    brand = data.get("CardTier", "N/A")
+    country = data.get("Country", {}).get("A2", "")
 
     flag = country_flag(country)
 
@@ -84,15 +86,12 @@ async def bin_lookup(bin_number: str) -> str:
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 Привет! Это BIN Checker Bot\n\n"
-        "Используй:\n"
-        "/bin 457173\n"
-        "или\n"
-        "!bin 457173"
+        "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
+        "🔹 Используй /bin 457173 или !bin 457173"
     )
 
 @dp.message()
-async def bin_message_handler(message: types.Message):
+async def bin_handler(message: types.Message):
     text = (message.text or "").strip()
 
     if text.startswith("/bin"):
@@ -103,7 +102,7 @@ async def bin_message_handler(message: types.Message):
         return
 
     if not args:
-        await message.answer("❌ Укажи BIN. Пример: /bin 457173")
+        await message.answer("❌ Пример: /bin 457173")
         return
 
     response = await bin_lookup(args)
