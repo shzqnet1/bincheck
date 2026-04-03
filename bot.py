@@ -1,17 +1,14 @@
 import asyncio
 import logging
+import os
 import aiohttp
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 # ================== CONFIG ==================
-API_TOKEN = "ТВОЙ_BOT_TOKEN_СЮДА"   # ← вставь токен бота
+API_TOKEN = os.getenv("BOT_TOKEN")  # НЕ ТРОГАЕМ (идёт с хоста)
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
-
-if not API_TOKEN:
-    print("Ошибка: BOT_TOKEN не задан!")
-    exit(1)
 
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
@@ -39,9 +36,12 @@ async def fetch_bin(bin_number: str):
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
-            if resp.status != 200:
+            try:
+                data = await resp.json()
+            except:
                 return None
-            return await resp.json()
+
+            return data
 
 # ================== BIN CHECK ==================
 async def bin_lookup(bin_number: str) -> str:
@@ -57,8 +57,12 @@ async def bin_lookup(bin_number: str) -> str:
 
     data = await fetch_bin(bin_number)
 
-    if not data or data.get("Status") != "SUCCESS":
-        return "❌ BIN не найден."
+    # 🔥 ВАЖНО: обрабатываем любые ответы API
+    if not data:
+        return "❌ API не отвечает."
+
+    if data.get("Status") != "SUCCESS":
+        return f"❌ Ошибка API: {data}"
 
     bank = data.get("Issuer", "N/A")
     type_ = data.get("Type", "N/A")
