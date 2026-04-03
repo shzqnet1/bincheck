@@ -75,7 +75,7 @@ async def bin_lookup(bin_number: str) -> str:
     response = (
         f"✅ **BIN:** `{bin_number}`\n"
         f"🏦 **Bank:** {bank}\n"
-        f"🌐 **Country:** {flag}\n"
+        f"🌐 **Country:** {name}+{flag}\n"
         f"💰 **Type:** {type_}\n"
         f"🏆 **Level:** {scheme}\n"
         f"💳 **Brand:** {brand}"
