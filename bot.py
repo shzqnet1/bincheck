@@ -13,7 +13,7 @@ API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 ALLOWED_USERS = {123456789}
-ALLOWED_CHATS = {-1001234567890}
+ALLOWED_CHATS = {-1003392192892}
 
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
