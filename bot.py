@@ -12,7 +12,7 @@ API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # 🔒 ДОСТУП
 ALLOWED_USERS = {7979473115,8412856341}  # свои ID
-ALLOWED_CHATS = {-5052976212}  # свой чат
+ALLOWED_CHATS = {-1003392192892}  # свой чат
 
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
