@@ -10,6 +10,10 @@ from aiogram.filters import Command
 API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
+# 🔒 ДОСТУП
+ALLOWED_USERS = {123456789}  # сюда свои ID
+ALLOWED_CHATS = {-1001234567890}  # сюда ID чата
+
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
 
@@ -29,18 +33,14 @@ def country_flag(country_code: str) -> str:
 # ================== API ==================
 async def fetch_bin(bin_number: str):
     url = f"https://data.handyapi.com/bin/{bin_number}"
-
-    headers = {
-        "x-api-key": API_KEY
-    }
+    headers = {"x-api-key": API_KEY}
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             try:
-                data = await resp.json()
+                return await resp.json()
             except:
                 return None
-            return data
 
 # ================== BIN CHECK ==================
 async def bin_lookup(bin_number: str) -> str:
@@ -74,11 +74,11 @@ async def bin_lookup(bin_number: str) -> str:
 
     # 🔥 ДИЗАЙН
     response = (
-        f"`BIN`      ➜ `{bin_number}`\n"
-        f"`COUNTRY`  ➜ `{flag}` {country_name}\n"
-        f"`BANK`     ➜ `{bank}`\n"
-        f"`BRAND`    ➜ `{scheme}`\n"
-        f"`TYPE`     ➜ `{type_}`"
+        f"`{bin_number}`\n"  # полностью кликабельный BIN
+        f"COUNTRY  ➜ `{flag} {country_name}`\n"
+        f"BANK     ➜ `{bank}`\n"
+        f"BRAND    ➜ `{scheme}`\n"
+        f"TYPE     ➜ `{type_}`"
     )
 
     BIN_CACHE[bin_number] = response
@@ -94,6 +94,18 @@ async def start_handler(message: types.Message):
 
 @dp.message()
 async def bin_handler(message: types.Message):
+    user_id = message.from_user.id
+
+    # 🔒 ЛС — только для разрешённых
+    if message.chat.type == "private":
+        if user_id not in ALLOWED_USERS:
+            return
+
+    # 🔒 ЧАТЫ — только разрешённые
+    if message.chat.type in ["group", "supergroup"]:
+        if message.chat.id not in ALLOWED_CHATS:
+            return
+
     text = (message.text or "").strip()
 
     if text.startswith("/bin"):
@@ -109,11 +121,11 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # 🔥 SENT BY (без лишнего отступа)
+    # 🔥 SENT BY
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
-    response += f"\n`SENT BY` ➜ {username}"
+    response += f"\nSENT BY ➜ {username}"
 
     await message.answer(response, parse_mode="Markdown")
 
