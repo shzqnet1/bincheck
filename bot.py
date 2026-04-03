@@ -71,14 +71,14 @@ async def bin_lookup(bin_number: str) -> str:
 
     flag = country_flag(country_code)
 
-    # 🔥 НУЖНЫЙ ДИЗАЙН
+    # 🔥 HTML ДИЗАЙН (кликается только значение)
     response = (
-    f"BIN      ➜ `{bin_number}`\n"
-    f"COUNTRY  ➜ `{flag} {country_name}`\n"
-    f"BANK     ➜ `{bank}`\n"
-    f"BRAND    ➜ `{scheme}`\n"
-    f"TYPE     ➜ `{type_}`"
-)
+        f"BIN      ➜ <code>{bin_number}</code>\n"
+        f"COUNTRY  ➜ <code>{flag} {country_name}</code>\n"
+        f"BANK     ➜ <code>{bank}</code>\n"
+        f"BRAND    ➜ <code>{scheme}</code>\n"
+        f"TYPE     ➜ <code>{type_}</code>"
+    )
 
     BIN_CACHE[bin_number] = response
     return response
@@ -120,13 +120,13 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # 🔥 SENT BY (не кликабельный)
+    # SENT BY (не кликается)
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
     response += f"\nSENT BY ➜ {username}"
 
-    await message.answer(response, parse_mode="Markdown")
+    await message.answer(response, parse_mode="HTML")
 
 # ================== RUN ==================
 async def main():
