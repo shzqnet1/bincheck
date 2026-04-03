@@ -1,10 +1,10 @@
 import asyncio
 import logging
 import os
-import requests
 import sqlite3
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
+import csv
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
@@ -26,7 +26,7 @@ dp = Dispatcher()
 # ================== DATABASE ==================
 DB_PATH = "bins.db"
 
-def init_db():
+def init_db(csv_file="ranges.csv"):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -40,32 +40,32 @@ def init_db():
         )
     """)
     conn.commit()
+
+    # Импорт CSV в базу
+    if os.path.exists(csv_file):
+        with open(csv_file, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                cursor.execute("""
+                    INSERT OR REPLACE INTO bins VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    row.get("bin", ""),
+                    row.get("bank_name", "N/A"),
+                    row.get("type", "N/A"),
+                    row.get("scheme", "N/A"),
+                    row.get("brand", "N/A"),
+                    row.get("country_code", "")
+                ))
+        conn.commit()
     conn.close()
 
 def get_from_db(bin_number):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM bins WHERE bin=?", (bin_number,))
+    cursor.execute("SELECT * FROM bins WHERE bin=?", (bin_number[:6],))
     row = cursor.fetchone()
     conn.close()
     return row
-
-def save_to_db(bin_number, data):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT OR REPLACE INTO bins VALUES (?, ?, ?, ?, ?, ?)",
-        (
-            bin_number,
-            data.get('bank', {}).get('name', 'N/A'),
-            data.get('type', 'N/A'),
-            data.get('scheme', 'N/A'),
-            data.get('brand', 'N/A'),
-            data.get('country', {}).get('alpha2', '')
-        )
-    )
-    conn.commit()
-    conn.close()
 
 # ================== COUNTRY FLAG ==================
 def country_flag(country_code: str) -> str:
@@ -83,11 +83,11 @@ def bin_lookup(bin_number: str) -> str:
         return "❌ Введи корректный BIN — минимум 6 цифр."
     bin_number = bin_number[:6]
 
-    # 1. Проверяем кэш
+    # Проверяем кэш
     if bin_number in BIN_CACHE:
         return BIN_CACHE[bin_number]
 
-    # 2. Проверяем базу
+    # Проверяем базу
     row = get_from_db(bin_number)
     if row:
         _, bank, type_, scheme, brand, country = row
@@ -103,42 +103,15 @@ def bin_lookup(bin_number: str) -> str:
         BIN_CACHE[bin_number] = response
         return response
 
-    # 3. Запрос к API (один раз)
-    api_urls = [
-        f"https://lookup.binlist.net/{bin_number}",
-        f"https://bins.antipublic.cc/bins/{bin_number}"  # резервный API
-    ]
-    for url in api_urls:
-        try:
-            r = requests.get(url, timeout=10)
-            if r.status_code != 200:
-                continue
-            data = r.json()
-            save_to_db(bin_number, data)
-            country = data.get('country', {}).get('alpha2', '') or data.get('country', '')
-            flag = country_flag(country)
-            response = (
-                f"💳 **BIN:** `{bin_number}`\n"
-                f"🏦 **Банк:** {data.get('bank', {}).get('name', 'N/A')}\n"
-                f"🌍 **Страна:** {flag}\n"
-                f"💼 **Тип:** {data.get('type', 'N/A')}\n"
-                f"💳 **Система:** {data.get('scheme', 'N/A')}\n"
-                f"🏷 **Бренд:** {data.get('brand', 'N/A')}"
-            )
-            BIN_CACHE[bin_number] = response
-            return response
-        except:
-            continue
-
-    return "❌ BIN не найден или недействителен."
+    return "❌ BIN не найден в базе."
 
 # ================== HANDLERS ==================
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
+        "👋 Привет! Добро пожаловать в локальный BIN Checker Bot!\n\n"
         "🔹 Используй команду /bin <номер карты> или !bin <номер карты> для проверки.\n"
-        "Пример: /bin 4165985824414481 или !bin 457173XXXXXX"
+        "Пример: /bin 416598XXXXXX или !bin 457173XXXXXX"
     )
 
 @dp.message()
@@ -160,7 +133,7 @@ async def bin_message_handler(message: types.Message):
 
 # ================== RUN BOT ==================
 async def main():
-    init_db()
+    init_db()  # инициализация базы из CSV
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
