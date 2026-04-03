@@ -42,7 +42,9 @@ async def fake_generator(country: str) -> str:
 
     country = aliases.get(country, country)
 
+    # 🌍 ВСЕ ЛОКАЦИИ
     locales = {
+        # Европа
         "uk": "en_GB", "ireland": "en_IE", "france": "fr_FR",
         "germany": "de_DE", "spain": "es_ES", "italy": "it_IT",
         "netherlands": "nl_NL", "belgium": "nl_BE", "switzerland": "de_CH",
@@ -53,21 +55,26 @@ async def fake_generator(country: str) -> str:
         "denmark": "da_DK", "estonia": "et_EE", "latvia": "lv_LV",
         "lithuania": "lt_LT", "ukraine": "uk_UA", "russia": "ru_RU",
 
+        # Америка
         "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
         "brazil": "pt_BR", "argentina": "es_AR", "chile": "es_CL",
         "colombia": "es_CO", "peru": "es_PE", "venezuela": "es_VE",
 
+        # Азия
         "china": "zh_CN", "japan": "ja_JP", "korea": "ko_KR",
         "india": "en_IN", "indonesia": "id_ID", "thailand": "th_TH",
         "vietnam": "vi_VN", "philippines": "en_PH", "malaysia": "ms_MY",
         "singapore": "en_SG",
 
+        # Ближний Восток
         "turkey": "tr_TR", "uae": "en_AE", "saudi": "ar_SA",
         "israel": "he_IL",
 
+        # Африка
         "southafrica": "en_ZA", "egypt": "ar_EG", "nigeria": "en_NG",
         "kenya": "en_KE", "morocco": "fr_MA",
 
+        # Океания
         "australia": "en_AU", "newzealand": "en_NZ"
     }
 
@@ -75,14 +82,35 @@ async def fake_generator(country: str) -> str:
     fake = Faker(locale)
 
     name = fake.name()
-    address = fake.address().replace("\n", ", ")
+    street = fake.street_address()
+    city = fake.city()
+
+    try:
+        state = fake.state()
+    except:
+        state = "N/A"
+
+    try:
+        zip_code = fake.postcode()
+    except:
+        zip_code = "N/A"
+
+    try:
+        country_name = fake.current_country()
+    except:
+        country_name = country.upper()
+
     email = fake.email()
     phone = fake.phone_number()
 
     return (
         f"<b>Fake Generator</b>\n\n"
-        f"<b>Name ⇾</b> <code>{name}</code>\n"
-        f"<b>Address ⇾</b> <code>{address}</code>\n"
+        f"<b>Name ⇾</b> <code>{name}</code>\n\n"
+        f"<b>Street ⇾</b> <code>{street}</code>\n"
+        f"<b>City ⇾</b> <code>{city}</code>\n"
+        f"<b>State ⇾</b> <code>{state}</code>\n"
+        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
+        f"<b>Country ⇾</b> <code>{country_name}</code>\n\n"
         f"<b>Email ⇾</b> <code>{email}</code>\n"
         f"<b>Phone ⇾</b> <code>{phone}</code>"
     )
