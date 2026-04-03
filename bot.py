@@ -65,18 +65,22 @@ async def bin_lookup(bin_number: str) -> str:
     bank = data.get("Issuer", "N/A")
     type_ = data.get("Type", "N/A")
     scheme = data.get("Scheme", "N/A")
+    brand = data.get("CardTier", "N/A")
 
     country_code = data.get("Country", {}).get("A2", "")
     country_name = data.get("Country", {}).get("Name", "N/A")
 
     flag = country_flag(country_code)
 
-        # 🔥 ДИЗАЙН
-   response = (
-    f"𝗜𝗻𝗳𝗼 ⇾ <code>{scheme} - {type_} - {brand}</code>\n"
-    f"𝐈𝐬𝐬𝐮𝐞𝐫 ⇾ <code>{bank}</code>\n"
-    f"𝐂𝐨𝐮𝐧𝐭𝐫𝐲 ⇾ <code>{country_name} {flag}</code>"
-)
+    # 🔥 ДИЗАЙН КАК НА СКРИНЕ
+    response = (
+        f"<b>MOONBIN</b>\n\n"
+        f"BIN      ➜ <code>{bin_number}</code>\n"
+        f"COUNTRY  ➜ {flag} <code>{country_name}</code>\n"
+        f"BANK     ➜ <code>{bank}</code>\n"
+        f"BRAND    ➜ <code>{scheme}</code>\n"
+        f"TYPE     ➜ <code>{type_}</code>"
+    )
 
     BIN_CACHE[bin_number] = response
     return response
@@ -118,7 +122,7 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # SENT BY
+    # 🔥 SENT BY
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
