@@ -8,7 +8,7 @@ from aiogram.filters import Command
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
-API_KEY = os.getenv("HAS-0YOh37R8W2YSQDHPvgxM9Zju6")  # ВСТАВЬ СЮДА КЛЮЧ
+API_KEY = os.getenv("PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4")  # ВСТАВЬ СЮДА КЛЮЧ
 
 if not API_TOKEN or not API_KEY:
     print("Ошибка: BOT_TOKEN или HANDY_API_KEY не задан!")
