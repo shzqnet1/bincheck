@@ -23,14 +23,6 @@ logging.basicConfig(
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# ================== COUNTRY FLAG ==================
-def country_flag(country_code: str) -> str:
-    """Преобразует двухбуквенный код страны в emoji флаг"""
-    if not country_code or len(country_code) != 2:
-        return "🏳️"
-    code = country_code.upper()
-    return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
-
 # ================== BIN CHECKER ==================
 def bin_lookup(bin_number: str) -> str:
     url = f"https://lookup.binlist.net/{bin_number}"
@@ -39,16 +31,13 @@ def bin_lookup(bin_number: str) -> str:
         if r.status_code != 200:
             return "❌ BIN не найден или недействителен."
         data = r.json()
-        country_code = data.get('country', {}).get('alpha2', '')
-        flag = country_flag(country_code)
-        # Красивый дизайн ответа
         return (
-            f"💳 **BIN:** `{bin_number[:6]}`\n"
-            f"🏦 **Банк:** {data.get('bank', {}).get('name', 'N/A')}\n"
-            f"🌍 **Страна:** {flag}\n"
-            f"💼 **Тип:** {data.get('type', 'N/A')}\n"
-            f"💳 **Система:** {data.get('scheme', 'N/A')}\n"
-            f"🏷 **Бренд:** {data.get('brand', 'N/A')}"
+            f"💳 BIN: {bin_number[:6]}\n"
+            f"🏦 Банк: {data.get('bank', {}).get('name', 'N/A')}\n"
+            f"🌍 Страна: {data.get('country', {}).get('name', 'N/A')}\n"
+            f"💼 Тип: {data.get('type', 'N/A')}\n"
+            f"💳 Система: {data.get('scheme', 'N/A')}\n"
+            f"🏷 Бренд: {data.get('brand', 'N/A')}"
         )
     except Exception:
         return "⚠️ Ошибка при запросе к API."
@@ -59,8 +48,8 @@ async def start_handler(message: types.Message):
     welcome_text = (
         "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
         "🔹 Этот бот позволяет проверять BIN банковских карт.\n"
-        "🔹 Используй команду /bin <номер карты> или !bin <номер карты> для проверки.\n"
-        "Пример: /bin 4165985824414481 или !bin 457173XXXXXX"
+        "🔹 Используй команду /bin <BIN> или !bin <BIN> для проверки карты.\n"
+        "Пример: /bin 457173 или !bin 457173"
     )
     await message.answer(welcome_text)
 
@@ -78,18 +67,16 @@ async def bin_message_handler(message: types.Message):
     if not args:
         await message.answer("❌ Укажи BIN после команды, например: /bin 457173 или !bin 457173")
         return
-
-    bin_number = ''.join(c for c in args if c.isdigit())[:6]
-    if len(bin_number) < 6:
+    bin_number = args.strip()
+    if not bin_number.isdigit() or len(bin_number) < 6:
         await message.answer("❌ Введи корректный BIN — минимум 6 цифр.")
         return
-
-    response = bin_lookup(bin_number)
-    await message.answer(response, parse_mode="Markdown")
+    response = bin_lookup(bin_number[:6])
+    await message.answer(response)
 
 # ================== RUN BOT ==================
 async def main():
     await dp.start_polling(bot)
 
-if __name__ == "__main__":
+if name == "main":
     asyncio.run(main())
