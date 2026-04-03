@@ -27,14 +27,14 @@ dp = Dispatcher()
 def country_flag(country_code: str) -> str:
     """Преобразует двухбуквенный код страны в emoji флаг"""
     if not country_code or len(country_code) != 2:
-        return "🏳️"  # белый флаг, если нет данных
+        return "🏳️"
     code = country_code.upper()
     return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
 # ================== BIN CHECKER ==================
-def bin_lookup(bin_number: str) -> str:
-    """Запрос к Binlist и формирование ответа"""
-    bin_number = bin_number[:6]  # Берём только первые 6 цифр
+def bin_lookup(full_card_number: str) -> str:
+    """Берём первые 6 цифр карты для запроса к Binlist"""
+    bin_number = full_card_number[:6]
     url = f"https://lookup.binlist.net/{bin_number}"
     try:
         r = requests.get(url, timeout=10)
@@ -60,8 +60,8 @@ async def start_handler(message: types.Message):
     welcome_text = (
         "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
         "🔹 Этот бот позволяет проверять BIN банковских карт.\n"
-        "🔹 Используй команду /bin <BIN> или !bin <BIN> для проверки карты.\n"
-        "Пример: /bin 457173 или !bin 457173"
+        "🔹 Используй команду /bin <номер карты> или !bin <номер карты> для проверки.\n"
+        "Пример: /bin 4165985824414481 или !bin 457173XXXXXX"
     )
     await message.answer(welcome_text)
 
@@ -75,17 +75,13 @@ async def bin_message_handler(message: types.Message):
     else:
         return  # Игнорируем все остальные сообщения
 
-    if not args:
-        await message.answer("❌ BIN не найден или недействителен.")
+    # Берём только цифры из введённого номера
+    digits = ''.join(c for c in args if c.isdigit())
+    if len(digits) < 6:
+        await message.answer("❌ Введи корректный номер карты (минимум 6 цифр).")
         return
 
-    # Берём только цифры, обрезаем до 6 для запроса
-    bin_number = ''.join(filter(str.isdigit, args))[:6]
-    if not bin_number:
-        await message.answer("❌ BIN не найден или недействителен.")
-        return
-
-    response = bin_lookup(bin_number)
+    response = bin_lookup(digits)
     await message.answer(response)
 
 # ================== RUN BOT ==================
