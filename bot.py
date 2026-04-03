@@ -23,6 +23,14 @@ logging.basicConfig(
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
+# ================== COUNTRY FLAG ==================
+def country_flag(country_code: str) -> str:
+    """Преобразует двухбуквенный код страны в emoji флаг"""
+    if not country_code or len(country_code) != 2:
+        return "🏳️"
+    code = country_code.upper()
+    return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
+
 # ================== BIN CHECKER ==================
 def bin_lookup(bin_number: str) -> str:
     url = f"https://lookup.binlist.net/{bin_number}"
@@ -31,10 +39,11 @@ def bin_lookup(bin_number: str) -> str:
         if r.status_code != 200:
             return "❌ BIN не найден или недействителен."
         data = r.json()
+        country_code = data.get('country', {}).get('alpha2', '')
         return (
             f"💳 BIN: {bin_number[:6]}\n"
             f"🏦 Банк: {data.get('bank', {}).get('name', 'N/A')}\n"
-            f"🌍 Страна: {data.get('country', {}).get('name', 'N/A')}\n"
+            f"🌍 Страна: {data.get('country', {}).get('name', 'N/A')} {country_flag(country_code)}\n"
             f"💼 Тип: {data.get('type', 'N/A')}\n"
             f"💳 Система: {data.get('scheme', 'N/A')}\n"
             f"🏷 Бренд: {data.get('brand', 'N/A')}"
