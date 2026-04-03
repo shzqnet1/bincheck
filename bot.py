@@ -101,7 +101,7 @@ async def fake_generator(country: str) -> str:
         country_name = country.upper()
 
     email = fake.email()
-    phone = fake.phone_number()
+    phone = ''.join(filter(lambda x: x.isdigit() or x == '+', fake.phone_number()))
 
     return (
         f"<b>Fake Generator</b>\n\n"
