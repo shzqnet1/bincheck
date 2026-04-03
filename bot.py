@@ -120,14 +120,6 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # 🔥 SENT BY
-    user = message.from_user
-    username = f"@{user.username}" if user.username else user.full_name
-
-    response += f"\nSENT BY ➜ {username}"
-
-    await message.answer(response, parse_mode="HTML")
-
 # ================== RUN ==================
 async def main():
     await dp.start_polling(bot)
