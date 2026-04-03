@@ -73,11 +73,11 @@ async def bin_lookup(bin_number: str) -> str:
 
     # 🔥 HTML ДИЗАЙН (кликается только значение)
     response = (
-    f"<code>BIN      ➜</code> <code>{bin_number}</code>\n"
-    f"<code>COUNTRY  ➜</code> <code>{country_name} {flag}</code>\n"
-    f"<code>BANK     ➜</code> <code>{bank}</code>\n"
-    f"<code>BRAND    ➜</code> <code>{scheme}</code>\n"
-    f"<code>TYPE     ➜</code> <code>{type_}</code>"
+    f"BIN      ➜</code> <code>{bin_number}</code>\n"
+    f"COUNTRY  ➜</code> <code>{country_name} {flag}</code>\n"
+    f"BANK     ➜</code> <code>{bank}</code>\n"
+    f"BRAND    ➜</code> <code>{scheme}</code>\n"
+    f"TYPE     ➜</code> <code>{type_}</code>"
 )
 
     BIN_CACHE[bin_number] = response
