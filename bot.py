@@ -32,9 +32,7 @@ def country_flag(country_code: str) -> str:
     return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
 # ================== BIN CHECKER ==================
-def bin_lookup(full_card_number: str) -> str:
-    """Берём первые 6 цифр карты для запроса к Binlist"""
-    bin_number = full_card_number[:6]
+def bin_lookup(bin_number: str) -> str:
     url = f"https://lookup.binlist.net/{bin_number}"
     try:
         r = requests.get(url, timeout=10)
@@ -43,16 +41,17 @@ def bin_lookup(full_card_number: str) -> str:
         data = r.json()
         country_code = data.get('country', {}).get('alpha2', '')
         flag = country_flag(country_code)
+        # Красивый дизайн ответа
         return (
-            f"💳 BIN: {bin_number}\n"
-            f"🏦 Банк: {data.get('bank', {}).get('name', 'N/A')}\n"
-            f"🌍 {flag}\n"
-            f"💼 Тип: {data.get('type', 'N/A')}\n"
-            f"💳 Система: {data.get('scheme', 'N/A')}\n"
-            f"🏷 Бренд: {data.get('brand', 'N/A')}"
+            f"💳 **BIN:** `{bin_number[:6]}`\n"
+            f"🏦 **Банк:** {data.get('bank', {}).get('name', 'N/A')}\n"
+            f"🌍 **Страна:** {flag}\n"
+            f"💼 **Тип:** {data.get('type', 'N/A')}\n"
+            f"💳 **Система:** {data.get('scheme', 'N/A')}\n"
+            f"🏷 **Бренд:** {data.get('brand', 'N/A')}"
         )
     except Exception:
-        return "❌ BIN не найден или недействителен."
+        return "⚠️ Ошибка при запросе к API."
 
 # ================== HANDLERS ==================
 @dp.message(Command("start"))
@@ -67,7 +66,8 @@ async def start_handler(message: types.Message):
 
 @dp.message()
 async def bin_message_handler(message: types.Message):
-    text = (message.text or "").strip()
+    text = message.text or ""
+    text = text.strip()
     if text.startswith("/bin"):
         args = text[4:].strip()
     elif text.startswith("!bin"):
@@ -75,14 +75,17 @@ async def bin_message_handler(message: types.Message):
     else:
         return  # Игнорируем все остальные сообщения
 
-    # Берём только цифры из введённого номера
-    digits = ''.join(c for c in args if c.isdigit())
-    if len(digits) < 6:
-        await message.answer("❌ Введи корректный номер карты (минимум 6 цифр).")
+    if not args:
+        await message.answer("❌ Укажи BIN после команды, например: /bin 457173 или !bin 457173")
         return
 
-    response = bin_lookup(digits)
-    await message.answer(response)
+    bin_number = ''.join(c for c in args if c.isdigit())[:6]
+    if len(bin_number) < 6:
+        await message.answer("❌ Введи корректный BIN — минимум 6 цифр.")
+        return
+
+    response = bin_lookup(bin_number)
+    await message.answer(response, parse_mode="Markdown")
 
 # ================== RUN BOT ==================
 async def main():
