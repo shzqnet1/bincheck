@@ -73,14 +73,11 @@ async def bin_lookup(bin_number: str) -> str:
     flag = country_flag(country_code)
 
     # 🔥 ДИЗАЙН КАК НА СКРИНЕ
-    response = (
-        f"<b>MOONBIN</b>\n\n"
-        f"BIN      ➜ <code>{bin_number}</code>\n"
-        f"COUNTRY  ➜ {flag} <code>{country_name}</code>\n"
-        f"BANK     ➜ <code>{bank}</code>\n"
-        f"BRAND    ➜ <code>{scheme}</code>\n"
-        f"TYPE     ➜ <code>{type_}</code>"
-    )
+   response = (
+    f"<b>Info ⇾</b> <code>{scheme} - {type_} - {brand}</code>\n"
+    f"<b>Issuer ⇾</b> <code>{bank}</code>\n"
+    f"<b>Country ⇾</b> <code>{country_name}</code> {flag}"
+))
 
     BIN_CACHE[bin_number] = response
     return response
