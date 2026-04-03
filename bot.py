@@ -11,8 +11,8 @@ API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # 🔒 ДОСТУП
-ALLOWED_USERS = {123456789}  # свои ID
-ALLOWED_CHATS = {-1003392192892}  # свой чат
+ALLOWED_USERS = {123456789}
+ALLOWED_CHATS = {-1003392192892}
 
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
@@ -73,7 +73,6 @@ async def bin_lookup(bin_number: str) -> str:
     flag = country_flag(country_code)
 
     # 🔥 ДИЗАЙН КАК НА СКРИНЕ
-       # 🔥 ДИЗАЙН
     response = (
         f"<b>Info ⇾</b> <code>{scheme} - {type_} - {brand}</code>\n"
         f"<b>Issuer ⇾</b> <code>{bank}</code>\n"
@@ -95,12 +94,12 @@ async def start_handler(message: types.Message):
 async def bin_handler(message: types.Message):
     user_id = message.from_user.id
 
-    # 🔒 ЛС — только для разрешённых
+    # 🔒 ЛС
     if message.chat.type == "private":
         if user_id not in ALLOWED_USERS:
             return
 
-    # 🔒 ЧАТЫ — только разрешённые
+    # 🔒 ЧАТЫ
     if message.chat.type in ["group", "supergroup"]:
         if message.chat.id not in ALLOWED_CHATS:
             return
@@ -119,6 +118,8 @@ async def bin_handler(message: types.Message):
         return
 
     response = await bin_lookup(args)
+
+    await message.answer(response, parse_mode="HTML")
 
 # ================== RUN ==================
 async def main():
