@@ -7,7 +7,6 @@ import random
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from faker import Faker
-from faker.config import AVAILABLE_LOCALES
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
@@ -36,16 +35,46 @@ def country_flag(country_code: str) -> str:
 async def fake_generator(country: str) -> str:
     country = country.lower()
 
-    # 🔥 авто-поиск локали
-    locale = None
-    for loc in AVAILABLE_LOCALES:
-        if country in loc.lower():
-            locale = loc
-            break
+    aliases = {
+        "us": "usa", "ua": "ukraine", "ru": "russia",
+        "de": "germany", "fr": "france", "es": "spain", "it": "italy",
+        "uk": "unitedkingdom"
+    }
 
-    if not locale:
-        locale = "en_US"
+    country = aliases.get(country, country)
 
+    locale_map = {
+        "unitedkingdom": "en_GB", "ireland": "en_IE",
+        "france": "fr_FR", "germany": "de_DE", "spain": "es_ES",
+        "italy": "it_IT", "netherlands": "nl_NL", "belgium": "nl_BE",
+        "switzerland": "de_CH", "austria": "de_AT", "poland": "pl_PL",
+        "czech": "cs_CZ", "slovakia": "sk_SK", "hungary": "hu_HU",
+        "romania": "ro_RO", "bulgaria": "bg_BG", "greece": "el_GR",
+        "portugal": "pt_PT", "sweden": "sv_SE", "norway": "no_NO",
+        "finland": "fi_FI", "denmark": "da_DK", "estonia": "et_EE",
+        "latvia": "lv_LV", "lithuania": "lt_LT", "ukraine": "uk_UA",
+        "russia": "ru_RU", "serbia": "sr_RS", "croatia": "hr_HR",
+        "slovenia": "sl_SI",
+
+        "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
+        "brazil": "pt_BR", "argentina": "es_AR", "chile": "es_CL",
+        "colombia": "es_CO", "peru": "es_PE", "venezuela": "es_VE",
+
+        "china": "zh_CN", "japan": "ja_JP", "korea": "ko_KR",
+        "india": "en_IN", "indonesia": "id_ID", "thailand": "th_TH",
+        "vietnam": "vi_VN", "philippines": "en_PH", "malaysia": "ms_MY",
+        "singapore": "en_SG",
+
+        "turkey": "tr_TR", "uae": "en_AE", "saudi": "ar_SA",
+        "israel": "he_IL",
+
+        "southafrica": "en_ZA", "egypt": "ar_EG", "nigeria": "en_NG",
+        "kenya": "en_KE", "morocco": "fr_MA",
+
+        "australia": "en_AU", "newzealand": "en_NZ"
+    }
+
+    locale = locale_map.get(country, "en_US")
     fake = Faker(locale)
 
     name = fake.name()
@@ -65,33 +94,39 @@ async def fake_generator(country: str) -> str:
     try:
         country_name = fake.current_country()
     except:
-        country_name = locale
-
-    # 🌍 код страны
-    prefix = locale.split("_")[-1]
+        country_name = country.upper()
 
     phone_codes = {
-        "US": "1", "GB": "44", "FR": "33", "DE": "49", "ES": "34",
-        "IT": "39", "NL": "31", "BE": "32", "CH": "41", "AT": "43",
-        "PL": "48", "CZ": "420", "SK": "421", "HU": "36", "RO": "40",
-        "BG": "359", "GR": "30", "PT": "351", "SE": "46", "NO": "47",
-        "FI": "358", "DK": "45", "EE": "372", "LV": "371", "LT": "370",
-        "UA": "380", "RU": "7", "RS": "381",
+        "usa": "1", "canada": "1", "mexico": "52",
+        "brazil": "55", "argentina": "54", "chile": "56",
+        "colombia": "57", "peru": "51", "venezuela": "58",
 
-        "CA": "1", "MX": "52", "BR": "55", "AR": "54", "CL": "56",
-        "CO": "57", "PE": "51", "VE": "58",
+        "unitedkingdom": "44", "ireland": "353", "france": "33",
+        "germany": "49", "spain": "34", "italy": "39",
+        "netherlands": "31", "belgium": "32", "switzerland": "41",
+        "austria": "43", "poland": "48", "czech": "420",
+        "slovakia": "421", "hungary": "36", "romania": "40",
+        "bulgaria": "359", "greece": "30", "portugal": "351",
+        "sweden": "46", "norway": "47", "finland": "358",
+        "denmark": "45", "estonia": "372", "latvia": "371",
+        "lithuania": "370", "ukraine": "380", "russia": "7",
+        "serbia": "381", "croatia": "385", "slovenia": "386",
 
-        "CN": "86", "JP": "81", "KR": "82", "IN": "91", "ID": "62",
-        "TH": "66", "VN": "84", "PH": "63", "MY": "60", "SG": "65",
+        "china": "86", "japan": "81", "korea": "82",
+        "india": "91", "indonesia": "62", "thailand": "66",
+        "vietnam": "84", "philippines": "63", "malaysia": "60",
+        "singapore": "65",
 
-        "TR": "90", "AE": "971", "SA": "966", "IL": "972",
+        "turkey": "90", "uae": "971", "saudi": "966",
+        "israel": "972",
 
-        "ZA": "27", "EG": "20", "NG": "234", "KE": "254", "MA": "212",
+        "southafrica": "27", "egypt": "20", "nigeria": "234",
+        "kenya": "254", "morocco": "212",
 
-        "AU": "61", "NZ": "64"
+        "australia": "61", "newzealand": "64"
     }
 
-    code = phone_codes.get(prefix, "1")
+    code = phone_codes.get(country, "1")
     local_number = ''.join(str(random.randint(0, 9)) for _ in range(9))
     phone = f"+{code}{local_number}"
 
