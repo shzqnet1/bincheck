@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import sys
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -12,7 +11,7 @@ ADMIN_IDS = [5194696458]
 
 if not API_TOKEN:
     print("Ошибка: переменная окружения BOT_TOKEN не задана!")
-    sys.exit(1)
+    exit(1)
 
 # ================== LOGGING ==================
 logging.basicConfig(
@@ -43,10 +42,9 @@ def bin_lookup(bin_number: str) -> str:
     if bin_number in BIN_CACHE:
         return BIN_CACHE[bin_number]
 
-    # Список API (резервный на случай сбоя Binlist)
     api_urls = [
         f"https://lookup.binlist.net/{bin_number}",
-        f"https://bins.antipublic.cc/bins/{bin_number}"
+        f"https://bins.antipublic.cc/bins/{bin_number}"  # резервный API
     ]
 
     for url in api_urls:
@@ -69,6 +67,7 @@ def bin_lookup(bin_number: str) -> str:
             return response
         except Exception:
             continue
+
     return "❌ BIN не найден или недействителен."
 
 # ================== HANDLERS ==================
@@ -89,9 +88,11 @@ async def bin_message_handler(message: types.Message):
         args = text[4:].strip()
     else:
         return
+
     if not args:
         await message.answer("❌ Укажи BIN после команды, например: /bin 457173 или !bin 457173")
         return
+
     response = bin_lookup(args)
     await message.answer(response, parse_mode="Markdown")
 
