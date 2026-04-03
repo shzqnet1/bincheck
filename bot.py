@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 # ================== CONFIG ==================
-API_TOKEN = os.getenv("BOT_TOKEN")  # НЕ ТРОГАЕМ (идёт с хоста)
+API_TOKEN = os.getenv("BOT_TOKEN")  # НЕ ТРОГАЕМ
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # ================== LOGGING ==================
@@ -57,7 +57,6 @@ async def bin_lookup(bin_number: str) -> str:
 
     data = await fetch_bin(bin_number)
 
-    # 🔥 ВАЖНО: обрабатываем любые ответы API
     if not data:
         return "❌ API не отвечает."
 
@@ -68,17 +67,20 @@ async def bin_lookup(bin_number: str) -> str:
     type_ = data.get("Type", "N/A")
     scheme = data.get("Scheme", "N/A")
     brand = data.get("CardTier", "N/A")
-    country = data.get("Country", {}).get("A2", "")
 
-    flag = country_flag(country)
+    country_code = data.get("Country", {}).get("A2", "")
+    country_name = data.get("Country", {}).get("Name", "N/A")
 
+    flag = country_flag(country_code)
+
+    # 🔥 ДИЗАЙН КАК НА СКРИНЕ
     response = (
-        f"✅ **BIN:** `{bin_number}`\n"
-        f"🏦 **Bank:** {bank}\n"
-        f"🌐 **Country:** {name}+{flag}\n"
-        f"💰 **Type:** {type_}\n"
-        f"🏆 **Level:** {scheme}\n"
-        f"💳 **Brand:** {brand}"
+        f"✅ Bin: `{bin_number}`\n"
+        f"🌍 Country: {country_name} {flag}\n"
+        f"🏦 Bank: {bank}\n"
+        f"💳 Brand: {scheme}\n"
+        f"💰 Type: {type_}\n"
+        f"🏆 Level: {brand}"
     )
 
     BIN_CACHE[bin_number] = response
@@ -108,6 +110,13 @@ async def bin_handler(message: types.Message):
         return
 
     response = await bin_lookup(args)
+
+    # ✅ Sent by (как на скрине)
+    user = message.from_user
+    username = f"@{user.username}" if user.username else user.full_name
+
+    response += f"\n\n📤 Sent by: {username}"
+
     await message.answer(response, parse_mode="Markdown")
 
 # ================== RUN ==================
