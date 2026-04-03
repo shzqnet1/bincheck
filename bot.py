@@ -11,7 +11,7 @@ API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # 🔒 ДОСТУП
-ALLOWED_USERS = {7979473115,8412856341}  # свои ID
+ALLOWED_USERS = {123456789}  # свои ID
 ALLOWED_CHATS = {-1003392192892}  # свой чат
 
 # ================== LOGGING ==================
@@ -71,14 +71,16 @@ async def bin_lookup(bin_number: str) -> str:
 
     flag = country_flag(country_code)
 
-    # 🔥 HTML ДИЗАЙН (кликается только значение)
+    # 🔥 СПЕЦ-ПРОБЕЛ ДЛЯ ВЫРАВНИВАНИЯ
+    space = " "
+
     response = (
-    f"BIN      ➜ <code>{bin_number}</code>\n"
-    f"COUNTRY  ➜ <code>{flag} {country_name}</code>\n"
-    f"BANK     ➜ <code>{bank}</code>\n"
-    f"BRAND    ➜ <code>{scheme}</code>\n"
-    f"TYPE     ➜ <code>{type_}</code>"
-)
+        f"BIN{space*6}➜ <code>{bin_number}</code>\n"
+        f"COUNTRY{space*2}➜ <code>{flag} {country_name}</code>\n"
+        f"BANK{space*5}➜ <code>{bank}</code>\n"
+        f"BRAND{space*4}➜ <code>{scheme}</code>\n"
+        f"TYPE{space*5}➜ <code>{type_}</code>"
+    )
 
     BIN_CACHE[bin_number] = response
     return response
@@ -120,7 +122,7 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # SENT BY (не кликается)
+    # SENT BY
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
