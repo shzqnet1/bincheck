@@ -1,24 +1,36 @@
-import requests
 import asyncio
-from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+import logging
+import os
+import sys
+import requests
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
-TOKEN = "8612028807:AAFAh2gMp_0lrQimmGTDkeTIXgX1GlM15tA"
+# ================== CONFIG ==================
+API_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_IDS = [5194696458]
 
-bot = Bot(token=TOKEN)
+if not API_TOKEN:
+    print("Ошибка: переменная окружения BOT_TOKEN не задана!")
+    sys.exit(1)
+
+# ================== LOGGING ==================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-def bin_lookup(bin_number):
+# ================== BIN CHECKER ==================
+def bin_lookup(bin_number: str) -> str:
     url = f"https://lookup.binlist.net/{bin_number}"
-    
     try:
         r = requests.get(url, timeout=10)
         if r.status_code != 200:
-            return "❌ BIN не найден"
-
+            return "❌ BIN не найден или недействителен."
         data = r.json()
-
         return (
             f"💳 BIN: {bin_number[:6]}\n"
             f"🏦 Банк: {data.get('bank', {}).get('name', 'N/A')}\n"
@@ -27,25 +39,34 @@ def bin_lookup(bin_number):
             f"💳 Система: {data.get('scheme', 'N/A')}\n"
             f"🏷 Бренд: {data.get('brand', 'N/A')}"
         )
-
     except Exception:
-        return "⚠️ Ошибка запроса к API"
+        return "⚠️ Ошибка при запросе к API."
 
+# ================== HANDLERS ==================
 @dp.message(Command("start"))
-async def start(message: Message):
-    await message.answer("👋 Привет! Отправь BIN (первые 6 цифр карты)")
+async def start_handler(message: types.Message):
+    welcome_text = (
+        "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
+        "🔹 Этот бот позволяет проверять BIN банковских карт.\n"
+        "🔹 Используй команду /bin <BIN> для проверки карты.\n"
+        "Пример: /bin 457173"
+    )
+    await message.answer(welcome_text)
 
-@dp.message()
-async def handle(message: Message):
-    text = message.text.strip()
-
-    if not text.isdigit() or len(text) < 6:
-        await message.answer("❌ Введи минимум 6 цифр")
+@dp.message(Command("bin"))
+async def bin_command_handler(message: types.Message):
+    args = message.get_args()
+    if not args:
+        await message.answer("❌ Укажи BIN после команды, например: /bin 457173")
         return
+    bin_number = args.strip()
+    if not bin_number.isdigit() or len(bin_number) < 6:
+        await message.answer("❌ Введи корректный BIN — минимум 6 цифр.")
+        return
+    response = bin_lookup(bin_number[:6])
+    await message.answer(response)
 
-    result = bin_lookup(text)
-    await message.answer(result)
-
+# ================== RUN BOT ==================
 async def main():
     await dp.start_polling(bot)
 
