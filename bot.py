@@ -48,16 +48,24 @@ async def start_handler(message: types.Message):
     welcome_text = (
         "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
         "🔹 Этот бот позволяет проверять BIN банковских карт.\n"
-        "🔹 Используй команду /bin <BIN> для проверки карты.\n"
-        "Пример: /bin 457173"
+        "🔹 Используй команду /bin <BIN> или !bin <BIN> для проверки карты.\n"
+        "Пример: /bin 457173 или !bin 457173"
     )
     await message.answer(welcome_text)
 
-@dp.message(Command("bin"))
-async def bin_command_handler(message: types.Message):
-    args = message.get_args()
+@dp.message()
+async def bin_message_handler(message: types.Message):
+    text = message.text or ""
+    text = text.strip()
+    if text.startswith("/bin"):
+        args = text[4:].strip()
+    elif text.startswith("!bin"):
+        args = text[4:].strip()
+    else:
+        return  # Игнорируем все остальные сообщения
+
     if not args:
-        await message.answer("❌ Укажи BIN после команды, например: /bin 457173")
+        await message.answer("❌ Укажи BIN после команды, например: /bin 457173 или !bin 457173")
         return
     bin_number = args.strip()
     if not bin_number.isdigit() or len(bin_number) < 6:
