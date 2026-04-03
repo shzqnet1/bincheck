@@ -2,17 +2,18 @@ import asyncio
 import logging
 import os
 import aiohttp
-import random
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from faker import Faker
+
+from mimesis import Person, Address
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
-ALLOWED_USERS = {1003539611, 7979473115, 8270778815}
+# 🔒 ДОСТУП
+ALLOWED_USERS = {1003539611,7979473115,8270778815}
 ALLOWED_CHATS = {-1003392192892}
 
 # ================== LOGGING ==================
@@ -21,11 +22,12 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# ================== FAKER ==================
-fake = Faker()
-
 # ================== CACHE ==================
 BIN_CACHE = {}
+
+# ================== FAKE ==================
+person = Person('en')
+address = Address('en')
 
 # ================== FLAG ==================
 def country_flag(country_code: str) -> str:
@@ -85,48 +87,20 @@ async def bin_lookup(bin_number: str) -> str:
     BIN_CACHE[bin_number] = response
     return response
 
-# ================== FAKE GENERATOR ==================
-def generate_fake():
-    first_name = fake.first_name()
-    last_name = fake.last_name()
-    full_name = f"{first_name} {last_name}"
-
-    email = f"{first_name.lower()}.{last_name.lower()}{random.randint(10,99)}@gmail.com"
-
-    # 🇪🇸 Телефон строго: +34XXXXXXXXX
-    phone = f"+34{random.randint(600000000, 799999999)}"
-
-    street = fake.street_address()
-    city = fake.city()
-    state = fake.state()
-    postal_code = fake.postcode()
-    country = fake.country()
-
-    return (
-        f"<b>Fake Generator</b>\n\n"
-        f"Name → <code>{full_name}</code>\n\n"
-        f"Street → <code>{street}</code>\n"
-        f"City → <code>{city}</code>\n"
-        f"State → <code>{state}</code>\n"
-        f"ZIP → <code>{postal_code}</code>\n"
-        f"Country → <code>{country}</code>\n\n"
-        f"Email → <code>{email}</code>\n"
-        f"Phone → <code>{phone}</code>"
-    )
-
-# ================== START ==================
+# ================== HANDLERS ==================
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 BIN Checker Bot\n\n"
+        "👋 MoonBIN Bot\n\n"
         "Команды:\n"
-        "/bin 457173 или !bin 457173\n"
-        "/fake или !fake"
+        "/bin 457173\n"
+        "!bin 457173\n"
+        "/fake\n"
+        "!fake"
     )
 
-# ================== MAIN HANDLER ==================
 @dp.message()
-async def main_handler(message: types.Message):
+async def bin_handler(message: types.Message):
     user_id = message.from_user.id
 
     # 🔒 ЛС
@@ -141,23 +115,49 @@ async def main_handler(message: types.Message):
 
     text = (message.text or "").strip()
 
-    # ===== BIN =====
-    if text.startswith("/bin") or text.startswith("!bin"):
-        args = text[4:].strip()
+    # ================== FAKE ==================
+    if text.startswith("/fake") or text.startswith("!fake"):
 
-        if not args:
-            await message.answer("❌ Пример: /bin 457173")
-            return
+        name = person.full_name()
+        street = address.street_name() + " " + address.building_number()
+        city = address.city()
+        state = address.state()
+        zip_code = address.postal_code()
+        country = address.country()
+        email = person.email()
+        phone = person.telephone()
 
-        response = await bin_lookup(args)
+        response = (
+            f"<b>MoonBIN</b>\n"
+            f"<i>Fake Generator</i>\n\n"
+            f"<b>Name ⇾</b> <code>{name}</code>\n\n"
+            f"<b>Street ⇾</b> <code>{street}</code>\n"
+            f"<b>City ⇾</b> <code>{city}</code>\n"
+            f"<b>State ⇾</b> <code>{state}</code>\n"
+            f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
+            f"<b>Country ⇾</b> <code>{country}</code>\n\n"
+            f"<b>Email ⇾</b> <code>{email}</code>\n"
+            f"<b>Phone ⇾</b> <code>{phone}</code>"
+        )
+
         await message.answer(response, parse_mode="HTML")
         return
 
-    # ===== FAKE =====
-    if text.startswith("/fake") or text.startswith("!fake"):
-        data = generate_fake()
-        await message.answer(data, parse_mode="HTML")
+    # ================== BIN ==================
+    if text.startswith("/bin"):
+        args = text[4:].strip()
+    elif text.startswith("!bin"):
+        args = text[4:].strip()
+    else:
         return
+
+    if not args:
+        await message.answer("❌ Пример: /bin 457173")
+        return
+
+    response = await bin_lookup(args)
+
+    await message.answer(response, parse_mode="HTML")
 
 # ================== RUN ==================
 async def main():
