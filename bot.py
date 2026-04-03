@@ -11,8 +11,8 @@ API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
 # 🔒 ДОСТУП
-ALLOWED_USERS = {123456789}  # сюда свои ID
-ALLOWED_CHATS = {-1001234567890}  # сюда ID чата
+ALLOWED_USERS = {7979473115,8412856341}  # свои ID
+ALLOWED_CHATS = {-1001234567890}  # свой чат
 
 # ================== LOGGING ==================
 logging.basicConfig(level=logging.INFO)
@@ -65,16 +65,15 @@ async def bin_lookup(bin_number: str) -> str:
     bank = data.get("Issuer", "N/A")
     type_ = data.get("Type", "N/A")
     scheme = data.get("Scheme", "N/A")
-    brand = data.get("CardTier", "N/A")
 
     country_code = data.get("Country", {}).get("A2", "")
     country_name = data.get("Country", {}).get("Name", "N/A")
 
     flag = country_flag(country_code)
 
-    # 🔥 ДИЗАЙН
+    # 🔥 НУЖНЫЙ ДИЗАЙН
     response = (
-        f"`{bin_number}`\n"  # полностью кликабельный BIN
+        f"`BIN      ➜ {bin_number}`\n"
         f"COUNTRY  ➜ `{flag} {country_name}`\n"
         f"BANK     ➜ `{bank}`\n"
         f"BRAND    ➜ `{scheme}`\n"
@@ -121,7 +120,7 @@ async def bin_handler(message: types.Message):
 
     response = await bin_lookup(args)
 
-    # 🔥 SENT BY
+    # 🔥 SENT BY (не кликабельный)
     user = message.from_user
     username = f"@{user.username}" if user.username else user.full_name
 
