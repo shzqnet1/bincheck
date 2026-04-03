@@ -73,12 +73,12 @@ async def bin_lookup(bin_number: str) -> str:
     flag = country_flag(country)
 
     response = (
-        f"💳 **BIN:** `{bin_number}`\n"
+        f"✅ **BIN:** `{bin_number}`\n"
         f"🏦 **Bank:** {bank}\n"
-        f"🌍 **Country:** {flag}\n"
-        f"💼 **Type:** {type_}\n"
-        f"💳 **System:** {scheme}\n"
-        f"🏷 **Brand:** {brand}"
+        f"🌐 **Country:** {flag}\n"
+        f"💰 **Type:** {type_}\n"
+        f"🏆 **Level:** {scheme}\n"
+        f"💳 **Brand:** {brand}"
     )
 
     BIN_CACHE[bin_number] = response
