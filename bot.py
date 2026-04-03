@@ -24,11 +24,10 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 # ================== CACHE ==================
-BIN_CACHE = {}  # кэш для последних проверок
+BIN_CACHE = {}
 
 # ================== COUNTRY FLAG ==================
 def country_flag(country_code: str) -> str:
-    """Преобразует код страны в emoji флаг"""
     if not country_code or len(country_code) != 2:
         return "🏳️"
     code = country_code.upper()
@@ -41,18 +40,22 @@ def bin_lookup(bin_number: str) -> str:
         return "❌ Введи корректный BIN — минимум 6 цифр."
     bin_number = bin_number[:6]
 
-    # Проверяем кэш
     if bin_number in BIN_CACHE:
         return BIN_CACHE[bin_number]
 
-    url = f"https://lookup.binlist.net/{bin_number}"
-    for attempt in range(3):  # пробуем 3 раза при ошибке
+    # Список API (резервный на случай сбоя Binlist)
+    api_urls = [
+        f"https://lookup.binlist.net/{bin_number}",
+        f"https://bins.antipublic.cc/bins/{bin_number}"
+    ]
+
+    for url in api_urls:
         try:
             r = requests.get(url, timeout=10)
             if r.status_code != 200:
                 continue
             data = r.json()
-            country_code = data.get('country', {}).get('alpha2', '')
+            country_code = data.get('country', {}).get('alpha2', '') or data.get('country', '')
             flag = country_flag(country_code)
             response = (
                 f"💳 **BIN:** `{bin_number}`\n"
@@ -62,7 +65,7 @@ def bin_lookup(bin_number: str) -> str:
                 f"💳 **Система:** {data.get('scheme', 'N/A')}\n"
                 f"🏷 **Бренд:** {data.get('brand', 'N/A')}"
             )
-            BIN_CACHE[bin_number] = response  # сохраняем в кэш
+            BIN_CACHE[bin_number] = response
             return response
         except Exception:
             continue
@@ -72,7 +75,7 @@ def bin_lookup(bin_number: str) -> str:
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 Привет! Добро пожаловать в BIN Checker Bot!\n\n"
+        "👋 Привет! Добро пожаловать в топ BIN Checker Bot!\n\n"
         "🔹 Используй команду /bin <номер карты> или !bin <номер карты> для проверки.\n"
         "Пример: /bin 4165985824414481 или !bin 457173XXXXXX"
     )
