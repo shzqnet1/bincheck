@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import aiohttp
-import random
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -36,8 +35,8 @@ COUNTRY_TO_LOCALE = {
     "bulgaria": "bg_BG", "greece": "el_GR", "portugal": "pt_PT",
     "ukraine": "uk_UA", "russia": "ru_RU",
 
-    # Балканы fallback
-    "serbia": "hr_HR", "bosnia": "hr_HR", "montenegro": "hr_HR",
+    # Балканы (fallback)
+    "serbia": "hr_HR",
 
     # Америка
     "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
@@ -58,40 +57,34 @@ COUNTRY_TO_LOCALE = {
 
 # ================== ALIASES ==================
 ALIASES = {
-    "us": "usa", "ru": "russia", "ua": "ukraine",
-    "de": "germany", "fr": "france", "es": "spain",
-    "it": "italy", "au": "australia", "rs": "serbia"
+    "us": "usa",
+    "ru": "russia",
+    "ua": "ukraine",
+    "de": "germany",
+    "fr": "france",
+    "es": "spain",
+    "it": "italy",
+    "au": "australia",
+    "rs": "serbia"
 }
-
-# ================== FLAG ==================
-def country_flag(country_code: str) -> str:
-    if not country_code or len(country_code) != 2:
-        return "🏳️"
-    code = country_code.upper()
-    return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
 # ================== FAKE ==================
 def resolve_country(user_input: str):
     user_input = user_input.lower()
-
-    # alias
     user_input = ALIASES.get(user_input, user_input)
 
-    # random
-    if user_input == "random":
-        return random.choice(list(COUNTRY_TO_LOCALE.keys()))
+    if user_input in COUNTRY_TO_LOCALE:
+        return user_input
 
-    # partial match
-    matches = [c for c in COUNTRY_TO_LOCALE if user_input in c]
-    if matches:
-        return matches[0]
-
-    return user_input
+    return None
 
 async def fake_generator(country_input: str) -> str:
     country = resolve_country(country_input)
 
-    locale = COUNTRY_TO_LOCALE.get(country, COUNTRY_TO_LOCALE["default"])
+    if not country:
+        return "❌ Страна не найдена"
+
+    locale = COUNTRY_TO_LOCALE.get(country, "en_US")
 
     if locale not in AVAILABLE_LOCALES:
         locale = "en_US"
@@ -118,12 +111,13 @@ async def fake_generator(country_input: str) -> str:
     phone = ''.join(c for c in raw_phone if c.isdigit() or c == '+')
 
     return (
+        f"<b>Fake Generator</b>\n\n"
+        f"<b>Country ⇾</b> <code>{country.capitalize()}</code>\n"
         f"<b>Name ⇾</b> <code>{name}</code>\n\n"
         f"<b>Street ⇾</b> <code>{street}</code>\n"
         f"<b>City ⇾</b> <code>{city}</code>\n"
         f"<b>State ⇾</b> <code>{state}</code>\n"
-        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
-        f"<b>Country ⇾</b> <code>{country.capitalize()}</code>\n\n"
+        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n\n"
         f"<b>Email ⇾</b> <code>{email}</code>\n"
         f"<b>Phone ⇾</b> <code>{phone}</code>"
     )
@@ -161,26 +155,30 @@ async def bin_lookup(bin_number: str) -> str:
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "🔥 BIN + Fake Generator PRO\n\n"
-        "Команды:\n"
+        "👋 BIN + Fake Generator\n\n"
+        "Примеры:\n"
         "!fake usa\n"
-        "!fake ger\n"
-        "!fake random\n"
-        "!fake list\n"
+        "!fake germany\n"
+        "!fake serbia\n"
         "/bin 457173"
     )
 
 @dp.message()
 async def handler(message: types.Message):
+    user_id = message.from_user.id
+
+    if message.chat.type == "private":
+        if user_id not in ALLOWED_USERS:
+            return
+
+    if message.chat.type in ["group", "supergroup"]:
+        if message.chat.id not in ALLOWED_CHATS:
+            return
+
     text = (message.text or "").strip().lower()
 
     if text.startswith("!fake"):
         args = text[5:].strip()
-
-        if args == "list":
-            countries = "\n".join(sorted(COUNTRY_TO_LOCALE.keys()))
-            await message.answer(f"<b>🌍 Countries:</b>\n{countries}")
-            return
 
         if not args:
             await message.answer("❌ Example: !fake usa")
@@ -194,7 +192,7 @@ async def handler(message: types.Message):
         args = text[4:].strip()
 
         if not args:
-            await message.answer("❌ Example: /bin 457173")
+            await message.answer("❌ Пример: /bin 457173")
             return
 
         response = await bin_lookup(args)
