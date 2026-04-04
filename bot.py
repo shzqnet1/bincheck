@@ -2,18 +2,17 @@ import asyncio
 import logging
 import os
 import aiohttp
+import random
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-
-from mimesis import Person, Address
+from faker import Faker
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
-# 🔒 ДОСТУП
-ALLOWED_USERS = {1003539611,7979473115,8270778815,7215287573}
+ALLOWED_USERS = {8270778815,7979473115,1003539611,8412856341,7215287573}
 ALLOWED_CHATS = {-1003392192892}
 
 # ================== LOGGING ==================
@@ -32,6 +31,93 @@ def country_flag(country_code: str) -> str:
     code = country_code.upper()
     return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
+# ================== FAKE ==================
+async def fake_generator(country: str) -> str:
+    country = country.lower()
+
+    aliases = {
+        "us": "usa", "ua": "ukraine", "ru": "russia",
+        "de": "germany", "fr": "france", "es": "spain", "it": "italy"
+    }
+
+    country = aliases.get(country, country)
+
+    # 🌍 ВСЕ ЛОКАЦИИ
+    locales = {
+        # Европа
+        "uk": "en_GB", "ireland": "en_IE", "france": "fr_FR",
+        "germany": "de_DE", "spain": "es_ES", "italy": "it_IT",
+        "netherlands": "nl_NL", "belgium": "nl_BE", "switzerland": "de_CH",
+        "austria": "de_AT", "poland": "pl_PL", "czech": "cs_CZ",
+        "slovakia": "sk_SK", "hungary": "hu_HU", "romania": "ro_RO",
+        "bulgaria": "bg_BG", "greece": "el_GR", "portugal": "pt_PT",
+        "sweden": "sv_SE", "norway": "no_NO", "finland": "fi_FI",
+        "denmark": "da_DK", "estonia": "et_EE", "latvia": "lv_LV",
+        "lithuania": "lt_LT", "ukraine": "uk_UA", "russia": "ru_RU",
+
+        # Америка
+        "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
+        "brazil": "pt_BR", "argentina": "es_AR", "chile": "es_CL",
+        "colombia": "es_CO", "peru": "es_PE", "venezuela": "es_VE",
+
+        # Азия
+        "china": "zh_CN", "japan": "ja_JP", "korea": "ko_KR",
+        "india": "en_IN", "indonesia": "id_ID", "thailand": "th_TH",
+        "vietnam": "vi_VN", "philippines": "en_PH", "malaysia": "ms_MY",
+        "singapore": "en_SG",
+
+        # Ближний Восток
+        "turkey": "tr_TR", "uae": "en_AE", "saudi": "ar_SA",
+        "israel": "he_IL",
+
+        # Африка
+        "southafrica": "en_ZA", "egypt": "ar_EG", "nigeria": "en_NG",
+        "kenya": "en_KE", "morocco": "fr_MA",
+
+        # Океания
+        "australia": "en_AU", "newzealand": "en_NZ"
+    }
+
+    locale = locales.get(country, "en_US")
+    fake = Faker(locale)
+
+    name = fake.name()
+    address = fake.address().replace("\n", ", ")
+    street = fake.street_address()
+    city = fake.city()
+
+    try:
+        state = fake.state()
+    except:
+        state = "N/A"
+
+    try:
+        zip_code = fake.postcode()
+    except:
+        zip_code = "N/A"
+
+    try:
+        country_name = fake.current_country()
+    except:
+        country_name = country.upper()
+
+    email = fake.email()
+    phone = fake.phone_number()
+
+    return (
+        f"<b>Fake Generator</b>\n\n"
+        f"<b>Name ⇾</b> <code>{name}</code>\n"
+        f"<b>Address ⇾</b> <code>{address}</code>\n"
+        f"<b>Name ⇾</b> <code>{name}</code>\n\n"
+        f"<b>Street ⇾</b> <code>{street}</code>\n"
+        f"<b>City ⇾</b> <code>{city}</code>\n"
+        f"<b>State ⇾</b> <code>{state}</code>\n"
+        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
+        f"<b>Country ⇾</b> <code>{country_name}</code>\n\n"
+        f"<b>Email ⇾</b> <code>{email}</code>\n"
+        f"<b>Phone ⇾</b> <code>{phone}</code>"
+    )
+
 # ================== API ==================
 async def fetch_bin(bin_number: str):
     url = f"https://data.handyapi.com/bin/{bin_number}"
@@ -44,7 +130,7 @@ async def fetch_bin(bin_number: str):
             except:
                 return None
 
-# ================== BIN CHECK ==================
+# ================== BIN ==================
 async def bin_lookup(bin_number: str) -> str:
     bin_number = ''.join(c for c in bin_number if c.isdigit())
 
@@ -87,72 +173,37 @@ async def bin_lookup(bin_number: str) -> str:
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 MoonBIN Bot\n\n"
-        "Команды:\n"
-        "/bin 457173\n"
-        "!bin 457173\n\n"
-        "/fake us\n"
-        "/fake ru\n"
-        "/fake sr"
+        "👋 BIN Checker Bot\n\n"
+        "Используй:\n/bin 457173\n!fake usa"
     )
 
 @dp.message()
-async def bin_handler(message: types.Message):
+async def handler(message: types.Message):
     user_id = message.from_user.id
 
-    # 🔒 ЛС
     if message.chat.type == "private":
         if user_id not in ALLOWED_USERS:
             return
 
-    # 🔒 ЧАТЫ
     if message.chat.type in ["group", "supergroup"]:
         if message.chat.id not in ALLOWED_CHATS:
             return
 
     text = (message.text or "").strip()
 
-    # ================== FAKE ==================
-    if text.startswith("/fake") or text.startswith("!fake"):
-        args = text.split()
+    # 🔥 FAKE
+    if text.startswith("!fake"):
+        args = text[5:].strip()
 
-        locale = "en"
-        if len(args) > 1:
-            locale = args[1].lower()
-
-        try:
-            person = Person(locale)
-            address = Address(locale)
-        except:
-            await message.answer("❌ Неподдерживаемая страна")
+        if not args:
+            await message.answer("❌ Example: !fake usa")
             return
 
-        name = person.full_name()
-        street = f"{address.street_name()} {address.street_number()}"
-        city = address.city()
-        state = address.state()
-        zip_code = address.postal_code()
-        country = address.country()
-        email = person.email()
-        phone = person.telephone()
-
-        response = (
-            f"<b>MoonBIN</b>\n"
-            f"<i>Fake Generator [{locale.upper()}]</i>\n\n"
-            f"<b>Name ⇾</b> <code>{name}</code>\n\n"
-            f"<b>Street ⇾</b> <code>{street}</code>\n"
-            f"<b>City ⇾</b> <code>{city}</code>\n"
-            f"<b>State ⇾</b> <code>{state}</code>\n"
-            f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
-            f"<b>Country ⇾</b> <code>{country}</code>\n\n"
-            f"<b>Email ⇾</b> <code>{email}</code>\n"
-            f"<b>Phone ⇾</b> <code>{phone}</code>"
-        )
-
+        response = await fake_generator(args)
         await message.answer(response, parse_mode="HTML")
         return
 
-    # ================== BIN ==================
+    # 🔥 BIN
     if text.startswith("/bin"):
         args = text[4:].strip()
     elif text.startswith("!bin"):
@@ -165,7 +216,6 @@ async def bin_handler(message: types.Message):
         return
 
     response = await bin_lookup(args)
-
     await message.answer(response, parse_mode="HTML")
 
 # ================== RUN ==================
