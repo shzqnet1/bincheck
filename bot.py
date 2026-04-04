@@ -119,7 +119,7 @@ async def bin_handler(message: types.Message):
     if text.startswith("/fake") or text.startswith("!fake"):
 
         name = person.full_name()
-        street = address.street_name() + " " + address.building_number()
+        street = f"{address.street_name()} {address.street_number()}"
         city = address.city()
         state = address.state()
         zip_code = address.postal_code()
