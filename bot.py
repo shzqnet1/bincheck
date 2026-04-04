@@ -24,9 +24,15 @@ dp = Dispatcher()
 # ================== CACHE ==================
 BIN_CACHE = {}
 
+# ================== FLAG ==================
+def country_flag(country_code: str) -> str:
+    if not country_code or len(country_code) != 2:
+        return "🏳️"
+    code = country_code.upper()
+    return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
+
 # ================== COUNTRY → LOCALE ==================
 COUNTRY_TO_LOCALE = {
-    # Европа
     "germany": "de_DE", "france": "fr_FR", "spain": "es_ES",
     "italy": "it_IT", "netherlands": "nl_NL", "belgium": "nl_BE",
     "sweden": "sv_SE", "norway": "no_NO", "finland": "fi_FI",
@@ -34,24 +40,13 @@ COUNTRY_TO_LOCALE = {
     "slovakia": "sk_SK", "hungary": "hu_HU", "romania": "ro_RO",
     "bulgaria": "bg_BG", "greece": "el_GR", "portugal": "pt_PT",
     "ukraine": "uk_UA", "russia": "ru_RU",
-
-    # Балканы (fallback)
     "serbia": "hr_HR",
-
-    # Америка
     "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
     "brazil": "pt_BR", "argentina": "es_AR",
-
-    # Азия
     "japan": "ja_JP", "korea": "ko_KR", "china": "zh_CN",
     "india": "en_IN", "thailand": "th_TH", "vietnam": "vi_VN",
-
-    # Африка
     "nigeria": "en_NG", "kenya": "en_KE", "egypt": "ar_EG",
-
-    # Океания
     "australia": "en_AU", "newzealand": "en_NZ",
-
     "default": "en_US"
 }
 
@@ -122,7 +117,7 @@ async def fake_generator(country_input: str) -> str:
         f"<b>Phone ⇾</b> <code>{phone}</code>"
     )
 
-# ================== BIN ==================
+# ================== API ==================
 async def fetch_bin(bin_number: str):
     url = f"https://data.handyapi.com/bin/{bin_number}"
     headers = {"x-api-key": API_KEY}
@@ -134,6 +129,7 @@ async def fetch_bin(bin_number: str):
             except:
                 return None
 
+# ================== BIN (старый дизайн) ==================
 async def bin_lookup(bin_number: str) -> str:
     bin_number = ''.join(c for c in bin_number if c.isdigit())
 
@@ -151,7 +147,7 @@ async def bin_lookup(bin_number: str) -> str:
         return "❌ API не отвечает."
 
     if data.get("Status") != "SUCCESS":
-        return f"❌ Ошибка API"
+        return "❌ Ошибка API"
 
     bank = data.get("Issuer", "N/A")
     type_ = data.get("Type", "N/A")
