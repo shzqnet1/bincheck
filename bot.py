@@ -122,8 +122,8 @@ async def fake_generator(country_input: str) -> str:
         f"<b>Street ⇾</b> <code>{street}</code>\n"
         f"<b>City ⇾</b> <code>{city}</code>\n"
         f"<b>State ⇾</b> <code>{state}</code>\n"
-        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n\n"
-        f"<b>Country ⇾</b> <code>{country.upper()}</code>\n"
+        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
+        f"<b>Country ⇾</b> <code>{country.capitalize()}</code>\n\n"
         f"<b>Email ⇾</b> <code>{email}</code>\n"
         f"<b>Phone ⇾</b> <code>{phone}</code>"
     )
