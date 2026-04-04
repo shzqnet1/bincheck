@@ -25,10 +25,6 @@ dp = Dispatcher()
 # ================== CACHE ==================
 BIN_CACHE = {}
 
-# ================== FAKE ==================
-person = Person('en')
-address = Address('en')
-
 # ================== FLAG ==================
 def country_flag(country_code: str) -> str:
     if not country_code or len(country_code) != 2:
@@ -94,9 +90,10 @@ async def start_handler(message: types.Message):
         "👋 MoonBIN Bot\n\n"
         "Команды:\n"
         "/bin 457173\n"
-        "!bin 457173\n"
-        "/fake\n"
-        "!fake"
+        "!bin 457173\n\n"
+        "/fake us\n"
+        "/fake ru\n"
+        "/fake sr"
     )
 
 @dp.message()
@@ -117,6 +114,18 @@ async def bin_handler(message: types.Message):
 
     # ================== FAKE ==================
     if text.startswith("/fake") or text.startswith("!fake"):
+        args = text.split()
+
+        locale = "en"
+        if len(args) > 1:
+            locale = args[1].lower()
+
+        try:
+            person = Person(locale)
+            address = Address(locale)
+        except:
+            await message.answer("❌ Неподдерживаемая страна")
+            return
 
         name = person.full_name()
         street = f"{address.street_name()} {address.street_number()}"
@@ -129,7 +138,7 @@ async def bin_handler(message: types.Message):
 
         response = (
             f"<b>MoonBIN</b>\n"
-            f"<i>Fake Generator</i>\n\n"
+            f"<i>Fake Generator [{locale.upper()}]</i>\n\n"
             f"<b>Name ⇾</b> <code>{name}</code>\n\n"
             f"<b>Street ⇾</b> <code>{street}</code>\n"
             f"<b>City ⇾</b> <code>{city}</code>\n"
