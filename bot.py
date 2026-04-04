@@ -140,16 +140,37 @@ async def bin_lookup(bin_number: str) -> str:
     if len(bin_number) < 6:
         return "❌ Введи минимум 6 цифр."
 
+    bin_number = bin_number[:8]
+
+    if bin_number in BIN_CACHE:
+        return BIN_CACHE[bin_number]
+
     data = await fetch_bin(bin_number)
 
-    if not data or data.get("Status") != "SUCCESS":
-        return "❌ BIN не найден."
+    if not data:
+        return "❌ API не отвечает."
 
-    return (
-        f"<b>Scheme ⇾</b> {data.get('Scheme')}\n"
-        f"<b>Type ⇾</b> {data.get('Type')}\n"
-        f"<b>Bank ⇾</b> {data.get('Issuer')}"
+    if data.get("Status") != "SUCCESS":
+        return f"❌ Ошибка API"
+
+    bank = data.get("Issuer", "N/A")
+    type_ = data.get("Type", "N/A")
+    scheme = data.get("Scheme", "N/A")
+    brand = data.get("CardTier", "N/A")
+
+    country_code = data.get("Country", {}).get("A2", "")
+    country_name = data.get("Country", {}).get("Name", "N/A")
+
+    flag = country_flag(country_code)
+
+    response = (
+        f"<b>Info ⇾</b> <code>{scheme} - {type_} - {brand}</code>\n"
+        f"<b>Issuer ⇾</b> <code>{bank}</code>\n"
+        f"<b>Country ⇾</b> <code>{country_name}</code> {flag}"
     )
+
+    BIN_CACHE[bin_number] = response
+    return response
 
 # ================== HANDLERS ==================
 @dp.message(Command("start"))
