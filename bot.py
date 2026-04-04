@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import aiohttp
-import random
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -12,7 +11,7 @@ from faker import Faker
 API_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = "PUB-0YLp2Jn3Qbw7qlY4Gu1gPMSR4"
 
-ALLOWED_USERS = {8270778815,7979473115,1003539611,8412856341,7215287573}
+ALLOWED_USERS = {8270778815, 7979473115, 1003539611, 8412856341, 7215287573}
 ALLOWED_CHATS = {-1003392192892}
 
 # ================== LOGGING ==================
@@ -37,14 +36,17 @@ async def fake_generator(country: str) -> str:
 
     aliases = {
         "us": "usa", "ua": "ukraine", "ru": "russia",
-        "de": "germany", "fr": "france", "es": "spain", "it": "italy"
+        "de": "germany", "fr": "france", "es": "spain", "it": "italy",
+        "au": "australia", "rs": "serbia", "uk": "uk",
+        "ca": "canada", "br": "brazil", "mx": "mexico",
+        "jp": "japan", "kr": "korea", "cn": "china",
+        "in": "india", "tr": "turkey", "pl": "poland"
     }
 
     country = aliases.get(country, country)
 
-    # 🌍 ВСЕ ЛОКАЦИИ
     locales = {
-        # Европа
+        # 🌍 EUROPE
         "uk": "en_GB", "ireland": "en_IE", "france": "fr_FR",
         "germany": "de_DE", "spain": "es_ES", "italy": "it_IT",
         "netherlands": "nl_NL", "belgium": "nl_BE", "switzerland": "de_CH",
@@ -54,35 +56,38 @@ async def fake_generator(country: str) -> str:
         "sweden": "sv_SE", "norway": "no_NO", "finland": "fi_FI",
         "denmark": "da_DK", "estonia": "et_EE", "latvia": "lv_LV",
         "lithuania": "lt_LT", "ukraine": "uk_UA", "russia": "ru_RU",
+        "serbia": "sr_RS", "croatia": "hr_HR", "slovenia": "sl_SI",
+        "bosnia": "bs_BA", "montenegro": "sr_ME",
 
-        # Америка
+        # 🌎 AMERICA
         "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
         "brazil": "pt_BR", "argentina": "es_AR", "chile": "es_CL",
         "colombia": "es_CO", "peru": "es_PE", "venezuela": "es_VE",
 
-        # Азия
+        # 🌏 ASIA
         "china": "zh_CN", "japan": "ja_JP", "korea": "ko_KR",
         "india": "en_IN", "indonesia": "id_ID", "thailand": "th_TH",
         "vietnam": "vi_VN", "philippines": "en_PH", "malaysia": "ms_MY",
         "singapore": "en_SG",
 
-        # Ближний Восток
+        # 🕌 MIDDLE EAST
         "turkey": "tr_TR", "uae": "en_AE", "saudi": "ar_SA",
         "israel": "he_IL",
 
-        # Африка
+        # 🌍 AFRICA
         "southafrica": "en_ZA", "egypt": "ar_EG", "nigeria": "en_NG",
         "kenya": "en_KE", "morocco": "fr_MA",
 
-        # Океания
+        # 🌊 OCEANIA
         "australia": "en_AU", "newzealand": "en_NZ"
     }
 
     locale = locales.get(country, "en_US")
     fake = Faker(locale)
 
+    # ✅ NAME (один раз)
     name = fake.name()
-    address = fake.address().replace("\n", ", ")
+
     street = fake.street_address()
     city = fake.city()
 
@@ -102,12 +107,13 @@ async def fake_generator(country: str) -> str:
         country_name = country.upper()
 
     email = fake.email()
-    phone = fake.phone_number()
+
+    # ✅ PHONE FIX
+    raw_phone = fake.phone_number()
+    phone = ''.join(c for c in raw_phone if c.isdigit() or c == '+')
 
     return (
         f"<b>Fake Generator</b>\n\n"
-        f"<b>Name ⇾</b> <code>{name}</code>\n"
-        f"<b>Address ⇾</b> <code>{address}</code>\n"
         f"<b>Name ⇾</b> <code>{name}</code>\n\n"
         f"<b>Street ⇾</b> <code>{street}</code>\n"
         f"<b>City ⇾</b> <code>{city}</code>\n"
@@ -191,7 +197,7 @@ async def handler(message: types.Message):
 
     text = (message.text or "").strip()
 
-    # 🔥 FAKE
+    # FAKE
     if text.startswith("!fake"):
         args = text[5:].strip()
 
@@ -203,7 +209,7 @@ async def handler(message: types.Message):
         await message.answer(response, parse_mode="HTML")
         return
 
-    # 🔥 BIN
+    # BIN
     if text.startswith("/bin"):
         args = text[4:].strip()
     elif text.startswith("!bin"):
