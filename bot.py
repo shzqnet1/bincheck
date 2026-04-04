@@ -2,10 +2,12 @@ import asyncio
 import logging
 import os
 import aiohttp
+import random
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from faker import Faker
+from faker.config import AVAILABLE_LOCALES
 
 # ================== CONFIG ==================
 API_TOKEN = os.getenv("BOT_TOKEN")
@@ -23,6 +25,44 @@ dp = Dispatcher()
 # ================== CACHE ==================
 BIN_CACHE = {}
 
+# ================== COUNTRY → LOCALE ==================
+COUNTRY_TO_LOCALE = {
+    # Европа
+    "germany": "de_DE", "france": "fr_FR", "spain": "es_ES",
+    "italy": "it_IT", "netherlands": "nl_NL", "belgium": "nl_BE",
+    "sweden": "sv_SE", "norway": "no_NO", "finland": "fi_FI",
+    "denmark": "da_DK", "poland": "pl_PL", "czech": "cs_CZ",
+    "slovakia": "sk_SK", "hungary": "hu_HU", "romania": "ro_RO",
+    "bulgaria": "bg_BG", "greece": "el_GR", "portugal": "pt_PT",
+    "ukraine": "uk_UA", "russia": "ru_RU",
+
+    # Балканы fallback
+    "serbia": "hr_HR", "bosnia": "hr_HR", "montenegro": "hr_HR",
+
+    # Америка
+    "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
+    "brazil": "pt_BR", "argentina": "es_AR",
+
+    # Азия
+    "japan": "ja_JP", "korea": "ko_KR", "china": "zh_CN",
+    "india": "en_IN", "thailand": "th_TH", "vietnam": "vi_VN",
+
+    # Африка
+    "nigeria": "en_NG", "kenya": "en_KE", "egypt": "ar_EG",
+
+    # Океания
+    "australia": "en_AU", "newzealand": "en_NZ",
+
+    "default": "en_US"
+}
+
+# ================== ALIASES ==================
+ALIASES = {
+    "us": "usa", "ru": "russia", "ua": "ukraine",
+    "de": "germany", "fr": "france", "es": "spain",
+    "it": "italy", "au": "australia", "rs": "serbia"
+}
+
 # ================== FLAG ==================
 def country_flag(country_code: str) -> str:
     if not country_code or len(country_code) != 2:
@@ -31,63 +71,34 @@ def country_flag(country_code: str) -> str:
     return chr(0x1F1E6 + ord(code[0]) - ord('A')) + chr(0x1F1E6 + ord(code[1]) - ord('A'))
 
 # ================== FAKE ==================
-async def fake_generator(country: str) -> str:
-    country = country.lower()
+def resolve_country(user_input: str):
+    user_input = user_input.lower()
 
-    aliases = {
-        "us": "usa", "ua": "ukraine", "ru": "russia",
-        "de": "germany", "fr": "france", "es": "spain", "it": "italy",
-        "au": "australia", "rs": "serbia", "uk": "uk",
-        "ca": "canada", "br": "brazil", "mx": "mexico",
-        "jp": "japan", "kr": "korea", "cn": "china",
-        "in": "india", "tr": "turkey", "pl": "poland"
-    }
+    # alias
+    user_input = ALIASES.get(user_input, user_input)
 
-    country = aliases.get(country, country)
+    # random
+    if user_input == "random":
+        return random.choice(list(COUNTRY_TO_LOCALE.keys()))
 
-    locales = {
-        # 🌍 EUROPE
-        "uk": "en_GB", "ireland": "en_IE", "france": "fr_FR",
-        "germany": "de_DE", "spain": "es_ES", "italy": "it_IT",
-        "netherlands": "nl_NL", "belgium": "nl_BE", "switzerland": "de_CH",
-        "austria": "de_AT", "poland": "pl_PL", "czech": "cs_CZ",
-        "slovakia": "sk_SK", "hungary": "hu_HU", "romania": "ro_RO",
-        "bulgaria": "bg_BG", "greece": "el_GR", "portugal": "pt_PT",
-        "sweden": "sv_SE", "norway": "no_NO", "finland": "fi_FI",
-        "denmark": "da_DK", "estonia": "et_EE", "latvia": "lv_LV",
-        "lithuania": "lt_LT", "ukraine": "uk_UA", "russia": "ru_RU",
-        "serbia": "sr_RS", "croatia": "hr_HR", "slovenia": "sl_SI",
-        "bosnia": "bs_BA", "montenegro": "sr_ME",
+    # partial match
+    matches = [c for c in COUNTRY_TO_LOCALE if user_input in c]
+    if matches:
+        return matches[0]
 
-        # 🌎 AMERICA
-        "usa": "en_US", "canada": "en_CA", "mexico": "es_MX",
-        "brazil": "pt_BR", "argentina": "es_AR", "chile": "es_CL",
-        "colombia": "es_CO", "peru": "es_PE", "venezuela": "es_VE",
+    return user_input
 
-        # 🌏 ASIA
-        "china": "zh_CN", "japan": "ja_JP", "korea": "ko_KR",
-        "india": "en_IN", "indonesia": "id_ID", "thailand": "th_TH",
-        "vietnam": "vi_VN", "philippines": "en_PH", "malaysia": "ms_MY",
-        "singapore": "en_SG",
+async def fake_generator(country_input: str) -> str:
+    country = resolve_country(country_input)
 
-        # 🕌 MIDDLE EAST
-        "turkey": "tr_TR", "uae": "en_AE", "saudi": "ar_SA",
-        "israel": "he_IL",
+    locale = COUNTRY_TO_LOCALE.get(country, COUNTRY_TO_LOCALE["default"])
 
-        # 🌍 AFRICA
-        "southafrica": "en_ZA", "egypt": "ar_EG", "nigeria": "en_NG",
-        "kenya": "en_KE", "morocco": "fr_MA",
+    if locale not in AVAILABLE_LOCALES:
+        locale = "en_US"
 
-        # 🌊 OCEANIA
-        "australia": "en_AU", "newzealand": "en_NZ"
-    }
-
-    locale = locales.get(country, "en_US")
     fake = Faker(locale)
 
-    # ✅ NAME (один раз)
     name = fake.name()
-
     street = fake.street_address()
     city = fake.city()
 
@@ -101,30 +112,23 @@ async def fake_generator(country: str) -> str:
     except:
         zip_code = "N/A"
 
-    try:
-        country_name = fake.current_country()
-    except:
-        country_name = country.upper()
-
     email = fake.email()
 
-    # ✅ PHONE FIX
     raw_phone = fake.phone_number()
     phone = ''.join(c for c in raw_phone if c.isdigit() or c == '+')
 
     return (
-        f"<b>Fake Generator</b>\n\n"
         f"<b>Name ⇾</b> <code>{name}</code>\n\n"
         f"<b>Street ⇾</b> <code>{street}</code>\n"
         f"<b>City ⇾</b> <code>{city}</code>\n"
         f"<b>State ⇾</b> <code>{state}</code>\n"
-        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n"
-        f"<b>Country ⇾</b> <code>{country_name}</code>\n\n"
+        f"<b>ZIP ⇾</b> <code>{zip_code}</code>\n\n"
+        f"<b>Country ⇾</b> <code>{country.upper()}</code>\n"
         f"<b>Email ⇾</b> <code>{email}</code>\n"
         f"<b>Phone ⇾</b> <code>{phone}</code>"
     )
 
-# ================== API ==================
+# ================== BIN ==================
 async def fetch_bin(bin_number: str):
     url = f"https://data.handyapi.com/bin/{bin_number}"
     headers = {"x-api-key": API_KEY}
@@ -136,70 +140,47 @@ async def fetch_bin(bin_number: str):
             except:
                 return None
 
-# ================== BIN ==================
 async def bin_lookup(bin_number: str) -> str:
     bin_number = ''.join(c for c in bin_number if c.isdigit())
 
     if len(bin_number) < 6:
         return "❌ Введи минимум 6 цифр."
 
-    bin_number = bin_number[:8]
-
-    if bin_number in BIN_CACHE:
-        return BIN_CACHE[bin_number]
-
     data = await fetch_bin(bin_number)
 
-    if not data:
-        return "❌ API не отвечает."
+    if not data or data.get("Status") != "SUCCESS":
+        return "❌ BIN не найден."
 
-    if data.get("Status") != "SUCCESS":
-        return f"❌ Ошибка API: {data}"
-
-    bank = data.get("Issuer", "N/A")
-    type_ = data.get("Type", "N/A")
-    scheme = data.get("Scheme", "N/A")
-    brand = data.get("CardTier", "N/A")
-
-    country_code = data.get("Country", {}).get("A2", "")
-    country_name = data.get("Country", {}).get("Name", "N/A")
-
-    flag = country_flag(country_code)
-
-    response = (
-        f"<b>Info ⇾</b> <code>{scheme} - {type_} - {brand}</code>\n"
-        f"<b>Issuer ⇾</b> <code>{bank}</code>\n"
-        f"<b>Country ⇾</b> <code>{country_name}</code> {flag}"
+    return (
+        f"<b>Scheme ⇾</b> {data.get('Scheme')}\n"
+        f"<b>Type ⇾</b> {data.get('Type')}\n"
+        f"<b>Bank ⇾</b> {data.get('Issuer')}"
     )
-
-    BIN_CACHE[bin_number] = response
-    return response
 
 # ================== HANDLERS ==================
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
-        "👋 BIN Checker Bot\n\n"
-        "Используй:\n/bin 457173\n!fake usa"
+        "🔥 BIN + Fake Generator PRO\n\n"
+        "Команды:\n"
+        "!fake usa\n"
+        "!fake ger\n"
+        "!fake random\n"
+        "!fake list\n"
+        "/bin 457173"
     )
 
 @dp.message()
 async def handler(message: types.Message):
-    user_id = message.from_user.id
+    text = (message.text or "").strip().lower()
 
-    if message.chat.type == "private":
-        if user_id not in ALLOWED_USERS:
-            return
-
-    if message.chat.type in ["group", "supergroup"]:
-        if message.chat.id not in ALLOWED_CHATS:
-            return
-
-    text = (message.text or "").strip()
-
-    # FAKE
     if text.startswith("!fake"):
         args = text[5:].strip()
+
+        if args == "list":
+            countries = "\n".join(sorted(COUNTRY_TO_LOCALE.keys()))
+            await message.answer(f"<b>🌍 Countries:</b>\n{countries}")
+            return
 
         if not args:
             await message.answer("❌ Example: !fake usa")
@@ -209,20 +190,15 @@ async def handler(message: types.Message):
         await message.answer(response, parse_mode="HTML")
         return
 
-    # BIN
-    if text.startswith("/bin"):
+    if text.startswith("/bin") or text.startswith("!bin"):
         args = text[4:].strip()
-    elif text.startswith("!bin"):
-        args = text[4:].strip()
-    else:
-        return
 
-    if not args:
-        await message.answer("❌ Пример: /bin 457173")
-        return
+        if not args:
+            await message.answer("❌ Example: /bin 457173")
+            return
 
-    response = await bin_lookup(args)
-    await message.answer(response, parse_mode="HTML")
+        response = await bin_lookup(args)
+        await message.answer(response, parse_mode="HTML")
 
 # ================== RUN ==================
 async def main():
