@@ -179,16 +179,6 @@ async def start_handler(message: types.Message):
 
 @dp.message()
 async def handler(message: types.Message):
-    user_id = message.from_user.id
-
-    if message.chat.type == "private":
-        if user_id not in ALLOWED_USERS:
-            return
-
-    if message.chat.type in ["group", "supergroup"]:
-        if message.chat.id not in ALLOWED_CHATS:
-            return
-
     text = (message.text or "").strip().lower()
 
     if text.startswith("!fake"):
